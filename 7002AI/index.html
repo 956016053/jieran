@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 知识图鉴 (@孑燃)</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css?v=28.0">
+    
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles-slim@2.0.6/tsparticles.slim.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+    <style>
+        .view-section { display: none; animation: fadeIn 0.5s; }
+        .view-section.active { display: block; }
+        .tab-container { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 30px; width: fit-content; margin-left: auto; margin-right: auto; }
+        .tab-btn { background: transparent; border: 2px solid transparent; color: #aaa; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 1rem; transition: all 0.3s; font-family: "Microsoft YaHei", sans-serif; }
+        .tab-btn.active { background: rgba(255,255,255,0.1); color: #fff; border-color: #00d2ff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.3); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="tsparticles"></div>
+    <div id="gestureActionOverlay" class="gesture-feedback-overlay">👋</div>
+
+    <div id="draggableCamera">
+        <div style="padding: 10px; text-align:center;">
+            <button id="camBtn" class="btn-cam" onclick="window.gestureSystem.toggleCamera()">
+                <i class="fas fa-camera"></i> 开启手势
+            </button>
+            <div id="videoContainer" class="video-overlay" style="margin-top:10px; display:none;">
+                <video id="webcam" autoplay playsinline></video>
+                <canvas id="output_canvas"></canvas>
+                <div id="gestureFeedback" class="gesture-hint">等待手势...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="donate-fab-container">
+        <div class="donate-card">
+            <div class="donate-title">☕ 投喂开发者</div>
+            <div class="qr-codes" style="display: flex; gap: 10px; justify-content: space-around;">
+                <div class="qr-item">
+                    <img src="/img/qr-wechat.jpg" alt="微信" style="width:100px; height:100px; background:#fff; padding:5px; border-radius:5px;">
+                    <div style="font-size:0.8rem; margin-top:5px; color:#ccc;">微信支付</div>
+                </div>
+                <div class="qr-item">
+                    <img src="images/alipay.png" alt="支付宝" style="width:100px; height:100px; background:#fff; padding:5px; border-radius:5px;">
+                    <div style="font-size:0.8rem; margin-top:5px; color:#ccc;">支付宝</div>
+                </div>
+            </div>
+        </div>
+        <button class="donate-fab"><i class="fas fa-gift"></i></button>
+    </div>
+
+    <header>
+        <div style="flex:1;">
+            <h2 style="margin:0;font-size:1.2rem;">AI 知识图鉴 - 抽卡模式</h2>
+            <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpBar"></div></div>
+            <div class="stats-text">
+                XP: <span id="scoreVal">0</span> | 已掌握: <span id="masteredCount">0</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchView('gacha')">🎰 知识抽卡</button>
+        <button class="tab-btn" onclick="switchView('factory')">🏭 题库工厂</button>
+    </div>
+
+    <div id="view-gacha" class="view-section active">
+        <div style="text-align:center; margin-bottom:30px;">
+            <button onclick="window.gachaSystem.draw(1)" class="btn-draw blue-btn"><i class="fas fa-bolt"></i> 单抽</button>
+            <button onclick="window.gachaSystem.draw(5)" class="btn-draw purple-btn"><i class="fas fa-layer-group"></i> 五连抽</button>
+            <button onclick="window.gachaSystem.draw(10)" class="btn-draw gold-btn"><i class="fas fa-gem"></i> 十连抽</button>
+            <button onclick="window.gachaSystem.openAlbum()" class="btn-draw ghost-btn"><i class="fas fa-book"></i> 我的卡册</button>
+        </div>
+
+        <div id="cardContainer" class="card-grid"></div>
+        
+        <div style="text-align:center; margin-top:40px; padding-top:20px; border-top:1px dashed #333;">
+            <button onclick="window.location.href='quiz.html?subject=default'" class="btn-draw ghost-btn">
+                🔮 进入刷题试炼场
+            </button>
+        </div>
+    </div>
+
+    <div id="view-factory" class="view-section">
+        <div style="background: rgba(30, 43, 74, 0.9); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); max-width: 800px; margin: 0 auto;">
+            <h3 style="margin-top:0; color:#4facfe;">🏭 上传 PDF -> AI 智能出题</h3>
+            <div style="margin-bottom: 15px;">
+                <label style="color:#aaa; font-size:0.9rem;">🔑 DeepSeek API Key:</label>
+                <input type="password" id="apiKeyInput" placeholder="sk-..." style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #555; background: #222; color: #fff; margin-top:5px;">
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <input type="file" id="pdfUpload" accept="application/pdf" style="color:#fff;">
+                <button onclick="window.localGen.startProcess()" class="btn-draw purple-btn">⚡ 开始生成</button>
+                <button onclick="window.localGen.clearData()" class="btn-draw ghost-btn" style="color:#e74c3c;">🗑️ 清空</button>
+            </div>
+            <div style="margin-top: 25px;">
+                <div id="genStatus" style="font-size: 0.9rem; color: #aaa;">等待上传...</div>
+                <div id="progressContainer" style="width: 100%; background-color: #333; border-radius: 10px; margin: 15px 0; overflow: hidden; display: none; height: 10px;">
+                    <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00d2ff, #3a7bd5); transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; padding-top:15px; border-top:1px dashed #444; display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size: 0.9rem; color: #fff;">
+                    本地库存: <span id="localCount" style="color:#00d2ff; font-weight:bold; font-size:1.4rem;">0</span> 题
+                </div>
+                <button id="startLocalQuizBtn" onclick="window.location.href='quiz.html?subject=local'" class="btn-draw" style="display:none; background: linear-gradient(45deg, #2ecc71, #1abc9c);">
+                    🚀 去答题
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="albumModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999;">
+        <div class="modal-content" style="background:#1a1a2e; margin: 5% auto; padding:30px; width:90vw; max-width:1400px; border-radius:20px; border:2px solid #4facfe; box-shadow: 0 0 30px rgba(79, 172, 254, 0.4); max-height:85vh; overflow-y:auto;">
+            <h3 style="color:#fff; margin-top:0; text-align:center; font-size:1.5rem;">📚 知识图鉴全集</h3>
+            <div id="albumGrid"></div>
+            <button onclick="document.getElementById('albumModal').style.display='none'" class="btn-draw ghost-btn" style="margin-top:30px; width:100%; height:50px; font-size:1.1rem;">关闭图鉴</button>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/local-generator.js"></script> 
+    <script type="module" src="js/gesture.js"></script>
+    <script type="module" src="js/app.js"></script>
+    <script src="js/loader.js"></script>
+    <script>
+        function switchView(v) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + v).classList.add('active');
+            const btns = document.querySelectorAll('.tab-btn');
+            if(v === 'gacha') btns[0].classList.add('active'); else btns[1].classList.add('active');
+        }
+    </script>
+</body>
+</html>

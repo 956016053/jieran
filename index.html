@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lab - Personal AI Projects</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/generator.css">
+    <!-- 引入自定义提示框样式 -->
+    <link rel="stylesheet" href="css/modal.css">
+</head>
+<body>
+    <!-- 头部导航 -->
+    <header class="header" id="header">
+        <nav class="nav-container">
+            <a href="#home" class="logo-container">
+                <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#6366f1"/>
+                            <stop offset="100%" style="stop-color:#a78bfa"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="45" fill="url(#logoGradient)" opacity="0.1"/>
+                    <path d="M25 60 L35 40 L50 55 L65 40 L75 60" stroke="url(#logoGradient)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="35" cy="40" r="3" fill="url(#logoGradient)"/>
+                    <circle cx="50" cy="55" r="3" fill="url(#logoGradient)"/>
+                    <circle cx="65" cy="40" r="3" fill="url(#logoGradient)"/>
+                    <rect x="30" y="65" width="40" height="12" rx="6" fill="url(#logoGradient)" opacity="0.3"/>
+                </svg>
+                <span class="logo-text">@Mian Mian</span>
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#features" class="nav-link">AI Features</a></li>
+                <li><a href="#slider" class="nav-link">Showcase</a></li>
+                <li><a href="#about" class="nav-link">About Me</a></li>
+				 <li><a href="7002AI/index.html" class="nav-link">Qus Bank</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- AI功能区块 -->
+    <section id="features" class="section ai-features">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">AI Models</h2>
+                <p class="section-subtitle">The author is a graduate student majoring in Artificial Intelligence with a focus on AIGC. More interesting AIGC models will be trained in the future.</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3 class="feature-title">随即图像生成</h3>
+                    <p class="feature-description">生成由AI创造的随机图像（预算有限，不要太在意大小~）.</p>
+                    <a href="#" class="feature-action" id="animalGeneratorBtn">Try Now</a>
+                </div>
+				
+				<div class="feature-card">
+				    <div class="feature-icon">🔍</div>
+				    <h3 class="feature-title">小说转动漫</h3>
+				    <p class="feature-description">上传长篇小说，将小说转化成动漫。训练中。。。.</p>
+				    <a href="#" class="feature-action" id="novelToAnimeBtn">Try Now</a>
+				</div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3 class="feature-title">短篇小说生成</h3>
+                    <p class="feature-description">根据提示，生成短篇小说。训练中。。。</p>
+                    <a href="#" class="feature-action" id="shortStoryBtn">Try Now</a>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎤</div>
+                    <h3 class="feature-title">音频合成</h3>
+                    <p class="feature-description">录取您一段声音，可以仿照您的声音说话。训练中。。。</p>
+                    <a href="#" class="feature-action" id="audioSynthesisBtn">Try Now</a>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3 class="feature-title">虚拟角色生成</h3>
+                    <p class="feature-description">输入您的要求，生成您的专属数字形象。训练中。。。</p>
+                    <a href="#" class="feature-action" id="virtualCharacterBtn">Try Now</a>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">虚拟伴侣生成</h3>
+                    <p class="feature-description">输入您的要求，生成您的专属虚拟伴侣。训练中。。。</p>
+                    <a href="#" class="feature-action" id="virtualPartnerBtn">Try Now</a>
+                </div>
+            </div>
+            
+            <!-- 小动物生成器结果展示区域 -->
+            <div class="image-generator" id="animalGenerator">
+                <div class="generator-header">
+                    <h3>小动物生成器</h3>
+                    <button class="generate-btn" id="generateNewBtn">生成新图像</button>
+                </div>
+                
+                <div class="image-result">
+                    <div class="loading-indicator" id="loadingIndicator">
+                        <div class="loading-spinner"></div>
+                        <p>正在生成小动物图像，请稍候...</p>
+                    </div>
+                    <img src="" alt="生成的小动物图像" class="generated-image" id="generatedImage" style="display: none; width: 128px; height: 128px; image-rendering: smooth;">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 关于我区块 -->
+    <section id="about" class="section about-me">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">About the Developer</h2>
+                <p class="section-subtitle">Passionate AI enthusiast with expertise in machine learning, deep learning, and full-stack development.</p>
+            </div>
+            
+            <div class="about-content">
+                <div class="profile-info">
+                    <div class="profile-image">
+                        <img src="img/unsplash-image-01.jpg" alt="Profile Picture">
+                    </div>
+                    <h3 class="profile-name">Liu Haoran</h3>
+                    <p class="profile-title">AI Engineer & Machine Learning Specialist</p>
+                    <p class="profile-bio">
+                        An AI graduate student passionate about technology, with a focus on AIGC, striving to deliver more valuable outcomes.
+                    </p>
+                    <div class="skills-list">
+                        <span class="skill-tag">Python</span>
+                        <span class="skill-tag">PyTorch</span>
+                        <span class="skill-tag">AIGC</span>
+                        <span class="skill-tag">T2V</span>
+                        <span class="skill-tag">GANs</span>
+                        <span class="skill-tag">Deep Learning</span>
+                        <span class="skill-tag">Web Development</span>
+                    </div>
+                    <div class="social-links">
+                        <a href="#" class="social-link">📱</a>
+                        <a href="#" class="social-link">💻</a>
+                        <a href="#" class="social-link">📊</a>
+                        <a href="#" class="social-link">📧</a>
+                    </div>
+                </div>
+                
+                <div class="experience-timeline">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-year">2025-Present</div>
+                        <div class="timeline-title">Postgraduate Student Majoring in AI</div>
+                        <div class="timeline-description">Postgraduate Student at the University of Malaya, with a focus on AIGC.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+						<div class="timeline-year">2025-Present</div>
+						<div class="timeline-title">Postgraduate Student Majoring in AI</div>
+						<div class="timeline-description">Postgraduate Student at the University of Malaya, with a focus on AIGC.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-year">2021-2025</div>
+                        <div class="timeline-title">Founder of Zijiji Technology Co., Ltd</div>
+                        <div class="timeline-description">Responsible for technical research and development and serving as director.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-year">2020-2024</div>
+                        <div class="timeline-title">Undergraduate Student in CS</div>
+                        <div class="timeline-description">Student Majoring in Computer Science and Technology, Shandong University.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 联系区块 -->
+    <section id="contact" class="section contact">
+        <div class="section-container">
+            <div class="section-header">
+                <h2 class="section-title">Get In Touch</h2>
+                <p class="section-subtitle">Interested in collaborating on an AI project or have questions about my work? Feel free to reach out.</p>
+            </div>
+            
+            <div class="contact-content">
+                <div class="contact-form">
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <label for="name">Your Name</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">Subject</label>
+                            <input type="text" id="subject" name="subject" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea id="message" name="message" required></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn">Send Message</button>
+                    </form>
+                </div>
+                
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">📍</div>
+                        <div class="contact-details">
+                            <h4>Location</h4>
+                            <p>University of Malaya<br>Southview apartment</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📱</div>
+                        <div class="contact-details">
+                            <h4>Phone & WhatsApp</h4>
+                            <p>+0193911336</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">📧</div>
+                        <div class="contact-details">
+                            <h4>Email Address</h4>
+                            <p>15639497566@163.example</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon">⏰</div>
+                        <div class="contact-details">
+                            <h4>Working Hours</h4>
+                            <p>Monday - Friday: 9:00 AM - 6:00 PM<br>Weekend: By appointment</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-main">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="footerLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#6366f1"/>
+                                    <stop offset="100%" style="stop-color:#a78bfa"/>
+                                </linearGradient>
+                            </defs>
+                            <circle cx="50" cy="50" r="45" fill="url(#footerLogoGradient)" opacity="0.1"/>
+                            <path d="M25 60 L35 40 L50 55 L65 40 L75 60" stroke="url(#footerLogoGradient)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="35" cy="40" r="3" fill="url(#footerLogoGradient)"/>
+                            <circle cx="50" cy="55" r="3" fill="url(#footerLogoGradient)"/>
+                            <circle cx="65" cy="40" r="3" fill="url(#footerLogoGradient)"/>
+                            <rect x="30" y="65" width="40" height="12" rx="6" fill="url(#footerLogoGradient)" opacity="0.3"/>
+                        </svg>
+                        <span class="footer-logo-text">AI Lab</span>
+                    </div>
+                    <p class="footer-description">Exploring the boundaries of artificial intelligence through innovative applications and research.</p>
+                    <div class="footer-social">
+                        <a href="#" class="social-link">📱</a>
+                        <a href="#" class="social-link">💻</a>
+                        <a href="#" class="social-link">📊</a>
+                        <a href="#" class="social-link">📧</a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>AI Tools</h4>
+                    <div class="footer-links">
+                        <a href="#" class="footer-link">Image Generator</a>
+                        <a href="#" class="footer-link">Text Analyzer</a>
+                        <a href="#" class="footer-link">Voice Assistant</a>
+                        <a href="#" class="footer-link">Object Detector</a>
+                        <a href="#" class="footer-link">Translation Tool</a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <div class="footer-links">
+                        <a href="#" class="footer-link">About Me</a>
+                        <a href="#" class="footer-link">Projects</a>
+                        <a href="#" class="footer-link">Skills</a>
+                        <a href="#" class="footer-link">Experience</a>
+                        <a href="#" class="footer-link">Blog</a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <div class="footer-links">
+                        <a href="#" class="footer-link">Help Center</a>
+                        <a href="#" class="footer-link">Privacy Policy</a>
+                        <a href="#" class="footer-link">Terms of Service</a>
+                        <a href="#" class="footer-link">Contact Support</a>
+                        <a href="#" class="footer-link">FAQ</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-copyright">© 2023 AI Lab. All rights reserved.</div>
+                <div class="footer-credits">Designed with passion for AI innovation</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 训练中提示框 -->
+    <div class="modal-backdrop" id="trainingModal">
+        <div class="modal-content">
+            <p>该模型还在训练中...</p>
+            <button class="modal-close" onclick="closeModal()">关闭</button>
+        </div>
+    </div>
+
+    <!-- 引入脚本 -->
+    <script src="js/script.js"></script>
+    <script src="js/generator.js"></script>
+    <script src="js/modal.js"></script>
+</body>
+</html>

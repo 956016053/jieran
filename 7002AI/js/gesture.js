@@ -1,3 +1,6 @@
+/* ============================================================
+    手势系统 V54.0 - 宽度解锁修正版
+   ============================================================ */
 import { FilesetResolver, HandLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.mjs";
 
 window.GestureSystem = {
@@ -5,7 +8,6 @@ window.GestureSystem = {
     handLandmarker: undefined,
     lastX: 0, lastY: 0, cooldown: false,
     
-    // 定义动作槽位
     actions: {
         up: { label: "向上", fn: null },
         down: { label: "向下", fn: null },
@@ -13,7 +15,6 @@ window.GestureSystem = {
         right: { label: "向右", fn: null }
     },
 
-    // 🔥 绑定动作的接口 (app.js 会调用这个)
     bind(direction, label, callback) {
         if(this.actions[direction]) {
             this.actions[direction].label = label;
@@ -21,7 +22,6 @@ window.GestureSystem = {
         }
     },
 
-    // 开关摄像头
     async toggleCamera() {
         const btn = document.getElementById('camBtn');
         const container = document.getElementById('videoContainer');
@@ -34,103 +34,141 @@ window.GestureSystem = {
             return;
         }
 
-        if (!this.handLandmarker) {
-            btn.innerText = "⏳ 加载模型...";
-            try {
+        container.style.display = 'flex'; // Flex 布局
+        container.style.minHeight = "200px"; 
+        
+        this.webcamRunning = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 启动中...';
+
+        try {
+            await this.startCam(btn);
+
+            if (!this.handLandmarker) {
                 const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
                 this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
                     baseOptions: { 
-                        // 🔥 修复：使用 Google 官方源，解决 jsDelivr 404 问题
                         modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
                         delegate: "GPU" 
                     },
-                    runningMode: "VIDEO", numHands: 1
+                    runningMode: "VIDEO", 
+                    numHands: 1
                 });
-            } catch(e) {
-                console.error(e);
-                alert("⚠️ 模型加载失败，请检查网络！(需能访问Google存储桶)");
-                btn.innerText = "⚠️ 加载失败";
-                return;
+                console.log("✅ AI Ready");
             }
+            btn.innerHTML = '<i class="fas fa-video-slash"></i> 关闭手势';
+        } catch(e) {
+            console.error("启动失败:", e);
+            alert("启动失败：" + e.message);
+            this.webcamRunning = false;
+            container.style.display = 'none';
+            btn.innerHTML = '<i class="fas fa-camera"></i> 开启手势';
         }
-
-        this.webcamRunning = true;
-        container.style.display = 'block';
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 启动中...';
-        this.startCam(btn);
     },
 
     startCam(btn) {
-        const video = document.getElementById('webcam');
-        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-            video.srcObject = stream;
-            video.onloadeddata = () => {
-                btn.innerHTML = '<i class="fas fa-video-slash"></i> 关闭手势';
-                this.predict();
-            };
-        }).catch(err => {
-            alert("无法访问摄像头权限！");
-            this.webcamRunning = false;
+        return new Promise((resolve, reject) => {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('output_canvas');
+
+            // CSS 负责布局，JS 只负责功能
+            video.muted = true;
+            video.playsInline = true;
+
+            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                video.srcObject = stream;
+
+                const playVideo = () => {
+                    video.play().then(() => {
+                        this.predict(); 
+                        resolve();
+                    }).catch(e => {
+                        setTimeout(playVideo, 100);
+                    });
+                };
+
+                if (video.readyState >= 1) playVideo();
+                else video.onloadedmetadata = playVideo;
+
+            }).catch(err => {
+                alert("无法获取摄像头权限！");
+                reject(err);
+            });
         });
     },
     
     stopCam() {
         const video = document.getElementById('webcam');
-        if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+        if(video && video.srcObject) {
+            video.srcObject.getTracks().forEach(t => t.stop());
+            video.srcObject = null;
+        }
     },
     
     async predict() {
         const video = document.getElementById('webcam');
         const canvas = document.getElementById('output_canvas');
-        const ctx = canvas.getContext('2d');
-        if(!this.webcamRunning) return;
         
-        if (video.videoWidth > 0) {
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            let now = performance.now();
-            
+        if(!this.webcamRunning || !video || !canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+            // 🔥🔥🔥 核心修复：只调整画布尺寸，绝对不要动视频尺寸！ 🔥🔥🔥
+            // 让 CSS 的 object-fit: cover 自动处理视频拉伸
+            if (canvas.width !== video.clientWidth || canvas.height !== video.clientHeight) {
+                canvas.width = video.clientWidth;
+                canvas.height = video.clientHeight;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
             if(this.handLandmarker) {
-                const result = this.handLandmarker.detectForVideo(video, now);
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                if(result.landmarks.length > 0) {
-                    const landmarks = result.landmarks[0];
-                    const x = landmarks[9].x * canvas.width;
-                    const y = landmarks[9].y * canvas.height;
+                try {
+                    let now = performance.now();
+                    const result = this.handLandmarker.detectForVideo(video, now);
                     
-                    ctx.fillStyle = "#00ff00"; ctx.beginPath(); ctx.arc(x, y, 8, 0, 2*Math.PI); ctx.fill();
-
-                    const currX = landmarks[9].x;
-                    const currY = landmarks[9].y;
-
-                    if(this.lastX !== 0 && !this.cooldown) {
-                        const deltaX = currX - this.lastX;
-                        const deltaY = currY - this.lastY;
-                        const absX = Math.abs(deltaX);
-                        const absY = Math.abs(deltaY);
-                        const THRESHOLD = 0.04; // 灵敏度
+                    if(result.landmarks && result.landmarks.length > 0) {
+                        const landmarks = result.landmarks[0];
+                        const x = landmarks[8].x * canvas.width;
+                        const y = landmarks[8].y * canvas.height;
                         
-                        if (absX > THRESHOLD || absY > THRESHOLD) {
-                            let dir = "";
-                            if (absY > absX) {
-                                // 👆 向上/👇 向下：统一映射为“换一批”
-                                dir = deltaY < -THRESHOLD ? 'up' : 'down';
-                            } else {
-                                // 👈 向左/👉 向右：统一映射为“翻页/单抽”
-                                // 镜像修正：x变大在视觉上是向右挥手
-                                dir = deltaX > 0 ? 'left' : 'right'; 
-                            }
-                            
-                            if(dir && this.actions[dir].fn) {
-                                this.triggerAction(dir);
-                            }
-                        }
+                        ctx.fillStyle = "#00f2fe"; 
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = "#00f2fe";
+                        ctx.beginPath(); 
+                        ctx.arc(x, y, 10, 0, 2*Math.PI); 
+                        ctx.fill();
+
+                        this.processGesture(landmarks[8].x, landmarks[8].y);
                     }
-                    this.lastX = currX; this.lastY = currY;
-                }
+                } catch (e) {}
             }
         }
         window.requestAnimationFrame(() => this.predict());
+    },
+
+    processGesture(currX, currY) {
+        if(this.lastX !== 0 && !this.cooldown) {
+            const deltaX = currX - this.lastX;
+            const deltaY = currY - this.lastY;
+            const absX = Math.abs(deltaX);
+            const absY = Math.abs(deltaY);
+            const THRESHOLD = 0.02; 
+            
+            if (absX > THRESHOLD || absY > THRESHOLD) {
+                let dir = "";
+                if (absY > absX) {
+                    dir = deltaY < -THRESHOLD ? 'up' : 'down';
+                } else {
+                    dir = deltaX > 0 ? 'left' : 'right'; 
+                }
+                
+                if(dir && this.actions[dir].fn) {
+                    this.triggerAction(dir);
+                }
+            }
+        }
+        this.lastX = currX; this.lastY = currY;
     },
 
     triggerAction(dir) {
@@ -138,13 +176,15 @@ window.GestureSystem = {
         const overlay = document.getElementById('gestureActionOverlay');
         const action = this.actions[dir];
         
-        if(feedback) { feedback.innerText = action.label; feedback.style.color = "#00ff00"; }
+        if(feedback) { 
+            feedback.innerText = "识别到: " + action.label; 
+            feedback.style.color = "#00f2fe"; 
+        }
         
-        // 屏幕中央大图标反馈
         if(overlay) {
             overlay.innerText = action.label;
             overlay.classList.add('show');
-            setTimeout(() => overlay.classList.remove('show'), 800);
+            setTimeout(() => overlay.classList.remove('show'), 500);
         }
 
         if(action.fn) action.fn();
@@ -152,10 +192,12 @@ window.GestureSystem = {
         this.cooldown = true;
         setTimeout(() => { 
             this.cooldown = false; 
-            if(feedback) { feedback.style.color = "white"; feedback.innerText = "等待手势..."; }
-        }, 800); 
+            if(feedback) { 
+                feedback.style.color = "white"; 
+                feedback.innerText = "等待手势..."; 
+            }
+        }, 400); 
     }
 };
 
-// 挂载
 window.gestureSystem = window.GestureSystem;

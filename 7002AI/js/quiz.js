@@ -1,17 +1,67 @@
+/* ============================================================
+    Quiz System V26.0 - 进出感应版
+   ============================================================ */
 window.quizSystem = {
     currentPage: 1,
-    pageSize: 6,
+    pageSize: 6, 
     currentFilter: 'all', 
     filteredData: [],
     allQuestions: [], 
+    activeIndex: -1, 
 
     init() {
         console.log("🚀 Quiz System Initializing...");
         this.loadData();
         this.bindEvents();
+        this.injectGestureGuide(); 
         this.bindGestureEvents();
-        // 🔥 REMOVED initDraggableCamera() to prevent conflict with app.js
+        this.bindOverlayClick();
         this.render();
+    },
+
+    // 🔥 供手势系统调用：手进来，放大当前（或第一个）
+    enterFocusMode() {
+        if (this.activeIndex === -1) {
+            this.activeIndex = 0; // 默认聚焦第一个
+        }
+        this.highlightFocus();
+        this.updateGestures();
+    },
+
+    // 🔥 供手势系统调用：手离开，恢复网格
+    exitFocusMode() {
+        this.activeIndex = -1;
+        this.highlightFocus();
+        this.updateGestures();
+    },
+
+    bindOverlayClick() {
+        document.body.addEventListener('click', (e) => {
+            if (document.body.classList.contains('has-focus') && 
+                !e.target.closest('.q-card') && 
+                !e.target.closest('.gesture-guide') &&
+                !e.target.closest('#draggableCamera')) {
+                this.exitFocusMode();
+            }
+        });
+    },
+
+    // 🔥 更新指南文案
+    injectGestureGuide() {
+        if(document.querySelector('.gesture-guide')) return;
+        const guideHtml = `
+            <div class="gesture-guide">
+                <div style="margin-bottom:10px; color:#00f2fe; font-weight:bold; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:5px;">👋 智能手势</div>
+                <div class="guide-item" style="color:#ffd700;"><span class="guide-icon">✋</span> 手入画面：自动放大</div>
+                <div class="guide-item" style="color:#aaa; margin-bottom:10px;"><span class="guide-icon">👋</span> 手离画面：自动恢复</div>
+                
+                <div class="guide-item"><span class="guide-icon">⬅️</span> 上一题 / 还没学会</div>
+                <div class="guide-item"><span class="guide-icon">➡️</span> 下一题 / 已经掌握</div>
+                <div class="guide-item"><span class="guide-icon">⬆️</span> 打开解析</div>
+                <div class="guide-item"><span class="guide-icon">⬇️</span> 关闭解析</div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', guideHtml);
     },
 
     loadData() {
@@ -61,7 +111,8 @@ window.quizSystem = {
                 e.currentTarget.classList.add('active');
                 this.currentFilter = e.currentTarget.dataset.type;
                 this.currentPage = 1; 
-                this.filterQuestions();
+                this.activeIndex = -1; 
+                this.render();
             });
         });
     },
@@ -70,25 +121,134 @@ window.quizSystem = {
         const checkGesture = setInterval(() => {
             if (window.GestureSystem) {
                 clearInterval(checkGesture);
-                window.GestureSystem.bind('left', '下一页', () => { this.nextPage(); this.triggerVisualFeedback('next'); });
-                window.GestureSystem.bind('right', '上一页', () => { this.prevPage(); this.triggerVisualFeedback('prev'); });
-                window.GestureSystem.bind('up', '看解析', () => {
-                    this.triggerVisualFeedback('analysis');
-                    const btns = document.querySelectorAll('.btn-analysis');
-                    if(btns.length > 0) this.toggleAnalysis(btns[0]);
-                });
+                this.updateGestures(); 
             }
         }, 500);
+    },
+
+    updateGestures() {
+        if (!window.GestureSystem) return;
+
+        // 如果未聚焦，手势不做任何事情（除了进出控制）
+        if (this.activeIndex === -1) {
+            // 清空绑定，防止在网格模式下误触翻页
+            window.GestureSystem.bind('left', '', null);
+            window.GestureSystem.bind('right', '', null);
+            window.GestureSystem.bind('up', '', null);
+            window.GestureSystem.bind('down', '', null);
+            return;
+        }
+
+        const cards = document.querySelectorAll('.q-card');
+        if (cards.length === 0) return;
+        
+        const currentCard = cards[this.activeIndex];
+        const analysisBox = currentCard.querySelector('.analysis-box');
+        const isAnalysisOpen = analysisBox && analysisBox.style.display !== 'none';
+
+        if (isAnalysisOpen) {
+            window.GestureSystem.bind('left', '还没学会', () => {
+                this.rateCurrent(false);
+                this.triggerVisualFeedback('hard');
+            });
+            window.GestureSystem.bind('right', '已经掌握', () => {
+                this.rateCurrent(true);
+                this.triggerVisualFeedback('easy');
+            });
+        } else {
+            window.GestureSystem.bind('left', '上一题', () => { 
+                this.moveFocus(-1); 
+                this.triggerVisualFeedback('prev'); 
+            });
+            window.GestureSystem.bind('right', '下一题', () => { 
+                this.moveFocus(1); 
+                this.triggerVisualFeedback('next'); 
+            });
+        }
+
+        window.GestureSystem.bind('up', '看解析', () => {
+            const btn = currentCard.querySelector('.btn-analysis');
+            if (btn && !isAnalysisOpen) this.toggleAnalysis(btn);
+        });
+        window.GestureSystem.bind('down', '收起', () => {
+            const btn = currentCard.querySelector('.btn-analysis');
+            if (btn && isAnalysisOpen) this.toggleAnalysis(btn);
+        });
+    },
+
+    moveFocus(direction) {
+        const cards = document.querySelectorAll('.q-card');
+        const maxIndex = cards.length - 1;
+        let newIndex = this.activeIndex + direction;
+
+        if (newIndex < 0) {
+            this.prevPage();
+            setTimeout(() => {
+                this.activeIndex = this.pageSize - 1;
+                this.highlightFocus();
+                this.updateGestures();
+            }, 100);
+        } else if (newIndex > maxIndex) {
+            this.nextPage();
+            setTimeout(() => {
+                this.activeIndex = 0;
+                this.highlightFocus();
+                this.updateGestures();
+            }, 100);
+        } else {
+            this.activeIndex = newIndex;
+            this.highlightFocus();
+            this.updateGestures();
+        }
+    },
+
+    highlightFocus() {
+        const cards = document.querySelectorAll('.q-card');
+        
+        if (this.activeIndex === -1) {
+            document.body.classList.remove('has-focus');
+            cards.forEach(card => card.classList.remove('active-focus'));
+            return;
+        }
+
+        document.body.classList.add('has-focus'); 
+        
+        cards.forEach((card, index) => {
+            if (index === this.activeIndex) {
+                card.classList.add('active-focus');
+            } else {
+                card.classList.remove('active-focus');
+            }
+        });
+    },
+
+    rateCurrent(isKnown) {
+        const currentQ = this.filteredData[(this.currentPage - 1) * this.pageSize + this.activeIndex];
+        if (currentQ) {
+            const cards = document.querySelectorAll('.q-card');
+            if(cards[this.activeIndex]) {
+                const btns = cards[this.activeIndex].querySelectorAll('.analysis-box button');
+                if(btns.length >= 2) {
+                    const targetBtn = isKnown ? btns[1] : btns[0];
+                    this.rateQuestion(currentQ.id, isKnown, targetBtn);
+                }
+            }
+        }
     },
 
     triggerVisualFeedback(actionType) {
         const overlay = document.getElementById('gestureActionOverlay');
         if(!overlay) return;
         let icon = '';
-        if(actionType === 'next') icon = '➡️ 下一页';
-        else if(actionType === 'prev') icon = '⬅️ 上一页';
-        else if(actionType === 'analysis') icon = '💡 看解析';
+        let color = '#00f2fe';
+
+        if(actionType === 'next') icon = '➡️ 下一题';
+        else if(actionType === 'prev') icon = '⬅️ 上一题';
+        else if(actionType === 'hard') { icon = '😰 还没学会'; color = '#ff6b6b'; }
+        else if(actionType === 'easy') { icon = '🧠 已经掌握'; color = '#2ecc71'; }
+        
         overlay.innerHTML = icon;
+        overlay.style.color = color;
         overlay.classList.add('show');
         setTimeout(() => overlay.classList.remove('show'), 500);
     },
@@ -149,6 +309,7 @@ window.quizSystem = {
             btn.innerHTML = '👀 查看解析';
             btn.classList.remove('active');
         }
+        this.updateGestures();
     },
 
     rateQuestion(id, isKnown, btn) {
@@ -188,6 +349,15 @@ window.quizSystem = {
             card.className = `q-card type-${q.type} animate-in`;
             card.style.animationDelay = `${index * 0.05}s`;
             
+            card.onclick = (e) => {
+                if(e.target.tagName === 'BUTTON' || e.target.closest('.opt-item')) return;
+                
+                this.activeIndex = index;
+                this.highlightFocus();
+                this.updateGestures();
+                e.stopPropagation(); 
+            };
+
             let typeLabel = '简答';
             if(q.type === 'choice') typeLabel = '选择';
             if(q.type === 'fill') typeLabel = '填空';
@@ -235,6 +405,17 @@ window.quizSystem = {
         });
 
         this.updatePagination();
+        
+        // 默认不聚焦
+        if (this.activeIndex === -1) {
+            this.highlightFocus();
+            this.updateGestures();
+        } else {
+            setTimeout(() => {
+                this.highlightFocus();
+                this.updateGestures();
+            }, 50);
+        }
     },
 
     updatePagination() {

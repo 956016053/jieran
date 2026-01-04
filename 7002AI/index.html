@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>题库系统 (@孑燃)</title>
+    <title>AI 知识图鉴 (@孑燃)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/app.css?v=28.0">
@@ -25,59 +25,57 @@
 <body>
     <div id="tsparticles"></div>
     <div id="gestureActionOverlay" class="gesture-feedback-overlay">👋</div>
-	<!-- 战斗面板 -->
-	<div id="virusBoss" class="virus-container" style="display:none;">
-	        <div class="virus-glitch-wrapper">
-	                    <i class="fas fa-spider virus-icon"></i>
-	                </div>
-	        <div class="virus-glitch"></div>
-	    </div>
-	
-	    <div id="battlePanel" style="display:none; position:fixed; top:120px; left:50%; transform:translateX(-50%); width:90%; max-width:500px; z-index:9999; pointer-events:none; background:rgba(0,0,0,0.6); padding:15px; border-radius:15px; border:1px solid rgba(255, 0, 85, 0.3); backdrop-filter: blur(5px);">
-	        
-	        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-	            <span style="color:#ff0055; font-weight:bold; text-shadow:0 0 10px #ff0055;">👾 \u7f51\u7edc\u75c5\u6bd2 (BOSS)</span>
-	            <span id="enemyHpText" style="color:#fff;">100%</span>
-	        </div>
-	        <div style="width:100%; height:12px; background:#333; border-radius:10px; overflow:hidden; border:1px solid #555;">
-	            <div id="enemyHpBar" style="width:100%; height:100%; background:linear-gradient(90deg, #ff0055, #ff6b6b); transition:width 0.3s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-	        </div>
-	
-	        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; margin-bottom:5px;">
-	            <span style="color:#00f2fe; font-weight:bold; text-shadow:0 0 10px #00f2fe;">🛡️ \u672c\u5730\u9632\u706b\u5899 (YOU)</span>
-	            <span id="playerHpText" style="color:#fff;">100%</span>
-	        </div>
-	        <div style="width:100%; height:12px; background:#333; border-radius:10px; overflow:hidden; border:1px solid #555;">
-	            <div id="playerHpBar" style="width:100%; height:100%; background:linear-gradient(90deg, #00f2fe, #4facfe); transition:width 0.3s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-	        </div>
-	        
-	        <div id="battleWarning" style="text-align:center; color:#ff3333; font-weight:bold; margin-top:8px; opacity:0; font-size:0.9rem; text-shadow: 0 0 5px red;">⚠️ \u8b66\u544a\uff1a\u9632\u706b\u5899\u5373\u5c06\u5d29\u6e83...</div>
-	    </div>
+
+    <div id="virusBoss" class="virus-container" style="display:none;">
+        <div class="virus-glitch-wrapper">
+            <i class="fas fa-spider virus-icon"></i>
+        </div>
+        <div class="virus-glitch"></div>
+    </div>
+    
+    <div id="battlePanel" style="display:none; position:fixed; top:120px; left:50%; transform:translateX(-50%); width:90%; max-width:500px; z-index:9999; pointer-events:none; background:rgba(0,0,0,0.3) !important; padding:15px; border-radius:15px; border:1px solid rgba(255, 0, 85, 0.2) !important; backdrop-filter: none;">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <span style="color:#ff0055; font-weight:bold; text-shadow:0 0 10px #ff0055;">👾 网络病毒 (BOSS)</span>
+            <span id="enemyHpText" style="color:#fff;">100%</span>
+        </div>
+        <div style="width:100%; height:12px; background:rgba(0,0,0,0.3); border-radius:10px; overflow:hidden; border:1px solid #555;">
+            <div id="enemyHpBar" style="width:100%; height:100%; background:linear-gradient(90deg, #ff0055, #ff6b6b); transition:width 0.3s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+        </div>
+    
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; margin-bottom:5px;">
+            <span style="color:#00f2fe; font-weight:bold; text-shadow:0 0 10px #00f2fe;">🛡️ 本地防火墙 (YOU)</span>
+            <span id="playerHpText" style="color:#fff;">100%</span>
+        </div>
+        <div style="width:100%; height:12px; background:rgba(0,0,0,0.3); border-radius:10px; overflow:hidden; border:1px solid #555;">
+            <div id="playerHpBar" style="width:100%; height:100%; background:linear-gradient(90deg, #00f2fe, #4facfe); transition:width 0.3s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+        </div>
+        
+        <div id="battleWarning" style="text-align:center; color:#ff3333; font-weight:bold; margin-top:8px; opacity:0; font-size:0.9rem; text-shadow: 0 0 5px red;">⚠️ 警告：防火墙即将崩溃...</div>
+    </div>
 
     <div id="draggableCamera">
-        <div style="padding: 10px; text-align:center;">
-            <button id="camBtn" class="btn-cam" onclick="window.gestureSystem.toggleCamera()">
-                <i class="fas fa-camera"></i> 开启手势
-            </button>
-            <div id="videoContainer" class="video-overlay" style="margin-top:10px; display:none;">
-                <video id="webcam" autoplay playsinline></video>
-                <canvas id="output_canvas"></canvas>
-                <div id="gestureFeedback" class="gesture-hint">等待手势...</div>
-            </div>
+        <button id="camBtn" class="btn-cam" onclick="window.gestureSystem.toggleCamera()">
+            <i class="fas fa-camera"></i> 开启手势
+        </button>
+        <div id="videoContainer" class="video-overlay" style="display:none;">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="output_canvas"></canvas>
+            <div id="gestureFeedback" class="gesture-hint">等待手势...</div>
         </div>
     </div>
 
     <div class="donate-fab-container">
         <div class="donate-card">
-            <div class="donate-title">☕ 投喂开发者</div>
+            <div class="donate-title" style="color:#fff; text-align:center; margin-bottom:10px; font-weight:bold;">☕ 投喂开发者</div>
             <div class="qr-codes" style="display: flex; gap: 10px; justify-content: space-around;">
                 <div class="qr-item">
                     <img src="/img/qr-wechat.jpg" alt="微信" style="width:100px; height:100px; background:#fff; padding:5px; border-radius:5px;">
-                    <div style="font-size:0.8rem; margin-top:5px; color:#ccc;">微信支付</div>
+                    <div style="font-size:0.8rem; margin-top:5px; color:#ccc; text-align:center;">微信支付</div>
                 </div>
                 <div class="qr-item">
                     <img src="images/alipay.png" alt="支付宝" style="width:100px; height:100px; background:#fff; padding:5px; border-radius:5px;">
-                    <div style="font-size:0.8rem; margin-top:5px; color:#ccc;">支付宝</div>
+                    <div style="font-size:0.8rem; margin-top:5px; color:#ccc; text-align:center;">支付宝</div>
                 </div>
             </div>
         </div>
@@ -86,7 +84,7 @@
 
     <header>
         <div style="flex:1;">
-            <h2 style="margin:0;font-size:1.2rem;">AI学习系统 - 抽卡模式</h2>
+            <h2 style="margin:0;font-size:1.2rem; color:#fff;">AI 知识图鉴 - 抽卡模式</h2>
             <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpBar"></div></div>
             <div class="stats-text">
                 XP: <span id="scoreVal">0</span> | 已掌握: <span id="masteredCount">0</span>
@@ -103,19 +101,17 @@
         </div>
 
     <div id="view-gacha" class="view-section active">
-        <div style="text-align:center; margin-bottom:30px;">
+        <div class="home-action-container">
             <button onclick="window.gachaSystem.draw(1)" class="btn-draw blue-btn"><i class="fas fa-bolt"></i> 单抽</button>
             <button onclick="window.gachaSystem.draw(5)" class="btn-draw purple-btn"><i class="fas fa-layer-group"></i> 五连抽</button>
             <button onclick="window.gachaSystem.draw(10)" class="btn-draw gold-btn"><i class="fas fa-gem"></i> 十连抽</button>
             <button onclick="window.gachaSystem.openAlbum()" class="btn-draw ghost-btn"><i class="fas fa-book"></i> 我的卡册</button>
-			<button onclick="window.gachaSystem.toggleBattleMode()" class="btn-draw" style="background:linear-gradient(135deg, #ff0055, #7928ca); box-shadow: 0 0 15px #ff0055;">
-			    ⚔️ 生存模式
-			</button>
+            <button onclick="window.gachaSystem.toggleBattleMode()" class="btn-draw" style="background:linear-gradient(135deg, #ff0055, #7928ca); box-shadow: 0 0 15px #ff0055;">
+                ⚔️ 开启生存挑战
+            </button>
         </div>
 
         <div id="cardContainer" class="card-grid"></div>
-        
-        
     </div>
 
     <div id="view-factory" class="view-section">
